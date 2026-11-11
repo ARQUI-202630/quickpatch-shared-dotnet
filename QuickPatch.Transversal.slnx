@@ -1,0 +1,10 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/QuickPatch.Transversal.Http/QuickPatch.Transversal.Http.csproj" />
+    <Project Path="src/QuickPatch.Transversal.Messaging/QuickPatch.Transversal.Messaging.csproj" />
+    <Project Path="src/QuickPatch.Transversal.Persistence/QuickPatch.Transversal.Persistence.csproj" />
+  </Folder>
+  <Folder Name="/tests/">
+    <Project Path="tests/QuickPatch.Transversal.Tests/QuickPatch.Transversal.Tests.csproj" />
+  </Folder>
+</Solution>

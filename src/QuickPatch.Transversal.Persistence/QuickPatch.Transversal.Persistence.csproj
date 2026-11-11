@@ -1,0 +1,12 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- Sesión de PostgreSQL común a los servicios .NET (DD 10.2, ADR-020). Sin lógica de dominio. -->
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Relational" Version="10.*" />
+  </ItemGroup>
+
+</Project>

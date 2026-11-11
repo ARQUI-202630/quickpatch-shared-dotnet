@@ -1,0 +1,50 @@
+name: CI
+
+# Código transversal .NET de QUICKPATCH (ADR-020): formato, compilación, pruebas y cobertura ≥ 80%.
+# No publica nada: los servicios lo consumen como submódulo fijado a una etiqueta vX.Y.Z.
+on:
+  push:
+    branches: [develop, main]
+    tags: ['v*']
+  pull_request:
+    branches: [develop, main]
+
+permissions:
+  contents: read
+
+jobs:
+  ci:
+    name: Lint, pruebas y cobertura
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          global-json-file: global.json
+
+      - name: Restaurar dependencias
+        run: dotnet restore
+
+      - name: Formato (lint)
+        run: dotnet format --verify-no-changes --no-restore
+
+      - name: Compilar
+        run: dotnet build --no-restore -c Release
+
+      - name: Pruebas (incluye PostgreSQL con Testcontainers)
+        run: |
+          dotnet test tests/QuickPatch.Transversal.Tests --no-build -c Release \
+            --collect:"XPlat Code Coverage" --logger trx --results-directory resultados
+
+      - name: Cobertura mínima
+        run: python3 .github/scripts/cobertura.py cobertura 80 "resultados/**/coverage.cobertura.xml"
+
+      - name: Guardar resultados de las pruebas
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: resultados-dotnet
+          path: resultados
+          if-no-files-found: ignore
