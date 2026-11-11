@@ -11,11 +11,12 @@ Un proyecto por mecanismo. Cada servicio referencia solo los que usa.
 | `QuickPatch.Transversal.Http` | `CorrelationId`: middleware de `X-Correlation-Id` y su lectura (contrato OpenAPI). `StructuredLogging.AddQuickPatchJsonConsole`: registro en JSON con scopes, cada línea con su `correlationId` | Api | ASP.NET Core |
 | `QuickPatch.Transversal.Persistence` | `TenantTransaction`: transacción con `set_config('app.current_tenant', ...)` para RLS (DD 10.2, ADR-005). `SessionRole`: `SET LOCAL ROLE` con el nombre validado | Infrastructure | EF Core relacional |
 | `QuickPatch.Transversal.Messaging` | Outbox (ADR-007): `OutboxEventRecord`, `OutboxPublisher<TContext, TRecord>`, `OutboxOptions` y `OutboxMessages`. Idempotencia (RN-EV1): `ProcessedEventRecord` y `ProcessedEventStore<TContext>`. `TransversalModel`: mapeo de `outbox_events` y `processed_events`. `KafkaConsumerService`: bucle de consumo que entrega al menos una vez (ADR-006, ADR-027) | Infrastructure | Persistence, Confluent.Kafka, EF Core relacional |
+| `QuickPatch.Transversal.Security` | Validación del JWT RS256 de Identity (ADR-018): `JwtSettings`, `JwtValidation` (llave pública, parámetros solo RS256 y `AddQuickPatchJwtBearer`) y `JwtClaims` (lectura de `sub`, `tenant_id` y `role`). Los roles y las políticas son de cada servicio | Api | ASP.NET Core, JwtBearer |
 
 ## Reglas (ADR-020)
 
 1. **Sin dominio.** Aquí no hay entidades, eventos, contratos ni reglas de negocio. Cada servicio conserva su base, sus migraciones, su DbContext, sus contratos de `quickpatch-kafka` y la traducción de errores a sus excepciones de dominio.
-2. **Las capas del servicio no cambian.** Domain y Application no referencian este repositorio. Los puertos (`ITenantUnitOfWork`, `IOutbox`, `IProcessedEventRepository`) siguen en la capa Application de cada servicio. Infrastructure los implementa con adaptadores delgados que delegan aquí, y Api usa `QuickPatch.Transversal.Http`.
+2. **Las capas del servicio no cambian.** Domain y Application no referencian este repositorio. Los puertos (`ITenantUnitOfWork`, `IOutbox`, `IProcessedEventRepository`) siguen en la capa Application de cada servicio. Infrastructure los implementa con adaptadores delgados que delegan aquí, y Api usa `QuickPatch.Transversal.Http` y `QuickPatch.Transversal.Security`.
 3. **Sin clase gigante.** Un proyecto por mecanismo, cada uno pequeño. Lo que solo usa un servicio se queda en ese servicio.
 4. **Versión fijada por el servicio.** Cada servicio consume este repositorio como submódulo en `shared/dotnet`, fijado a una etiqueta `vX.Y.Z`. Actualizar es un PR propio del servicio, con su CI y su despliegue en QA.
 5. **Compatibilidad.** Un cambio incompatible sube la versión mayor y se anuncia a los dueños de los servicios. Cambiar el comportamiento sin cambiar la firma (por ejemplo, el reintento del publicador) también es un cambio que se anota en las notas de la etiqueta.
@@ -25,7 +26,7 @@ Un proyecto por mecanismo. Cada servicio referencia solo los que usa.
 
 ```bash
 git submodule add https://github.com/ARQUI-202630/quickpatch-shared-dotnet.git shared/dotnet
-git -C shared/dotnet checkout v0.2.0
+git -C shared/dotnet checkout v0.2.1
 ```
 
 En el `.csproj` de la capa que lo usa (Api para Http; Infrastructure para Persistence y Messaging):
@@ -64,10 +65,11 @@ services.AddSingleton<OutboxPublisher<CatalogDbContext, OutboxEventRecord>>();
 services.AddHostedService(sp => sp.GetRequiredService<OutboxPublisher<CatalogDbContext, OutboxEventRecord>>());
 ```
 
-En Api: `builder.Logging.AddQuickPatchJsonConsole();` y `app.UseCorrelationId();`.
+En Api: `builder.Logging.AddQuickPatchJsonConsole();`, `app.UseCorrelationId();` y `services.AddQuickPatchJwtBearer(settings, TimeSpan.FromSeconds(30));` seguido de las políticas del servicio.
 
 ## Versiones
 
+- **v0.2.1**: validación del JWT RS256 (`QuickPatch.Transversal.Security`). Compatible con v0.2.0.
 - **v0.2.0**: transacción por tenant, idempotencia, mapeo común de `outbox_events` y `processed_events`, bucle consumidor de Kafka y registro estructurado. Compatible con v0.1.0.
 - **v0.1.0**: correlación, rol de sesión y publicador del Outbox.
 
