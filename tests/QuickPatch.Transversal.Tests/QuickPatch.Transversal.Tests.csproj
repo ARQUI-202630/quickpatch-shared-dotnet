@@ -23,6 +23,7 @@
     <ProjectReference Include="..\..\src\QuickPatch.Transversal.Http\QuickPatch.Transversal.Http.csproj" />
     <ProjectReference Include="..\..\src\QuickPatch.Transversal.Messaging\QuickPatch.Transversal.Messaging.csproj" />
     <ProjectReference Include="..\..\src\QuickPatch.Transversal.Persistence\QuickPatch.Transversal.Persistence.csproj" />
+    <ProjectReference Include="..\..\src\QuickPatch.Transversal.Security\QuickPatch.Transversal.Security.csproj" />
   </ItemGroup>
 
 </Project>
